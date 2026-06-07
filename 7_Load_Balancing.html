@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Load Balancing</title>
+<style>
+  :root {
+    --bg: #0f1117;
+    --surface: #1a1d27;
+    --surface2: #22263a;
+    --border: #2e3350;
+    --accent: #4f8ef7;
+    --green: #22c55e;
+    --red: #ef4444;
+    --text: #e2e8f0;
+    --text2: #94a3b8;
+    --text3: #64748b;
+    --tag-bg: #1e3a5f;
+    --tag-text: #93c5fd;
+    --radius: 12px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; min-height: 100vh; }
+
+  /* ── NAV ── */
+  nav { display: flex; align-items: center; gap: 12px; padding: 14px 24px; border-bottom: 1px solid var(--border); position: sticky; top: 0; background: var(--bg); z-index: 100; }
+  nav a { color: var(--text2); text-decoration: none; font-size: 14px; }
+  nav a:hover { color: var(--text); }
+  nav .sep { color: var(--text3); }
+  nav .module-title { color: var(--text); font-weight: 600; font-size: 15px; }
+  nav .right { margin-left: auto; display: flex; gap: 10px; align-items: center; }
+  .btn-overview { background: var(--surface2); color: var(--text2); border: 1px solid var(--border); border-radius: 8px; padding: 6px 14px; font-size: 13px; cursor: pointer; text-decoration: none; }
+  .btn-overview:hover { color: var(--text); background: var(--border); }
+
+  /* ── OVERVIEW PAGE ── */
+  #overview-page { max-width: 820px; margin: 0 auto; padding: 40px 24px; }
+  .ov-header { margin-bottom: 32px; }
+  .ov-header h1 { font-size: 26px; font-weight: 700; margin-bottom: 8px; }
+  .ov-header .meta { color: var(--text2); font-size: 14px; }
+  .ov-section { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 24px; margin-bottom: 20px; }
+  .ov-section h2 { font-size: 16px; font-weight: 600; margin-bottom: 16px; color: var(--accent); }
+  .ov-section li { color: var(--text2); font-size: 14px; line-height: 1.8; margin-left: 18px; }
+  .ov-section li strong { color: var(--text); }
+  .trap-item { color: #fbbf24 !important; }
+  .start-btn { display: block; width: 100%; padding: 16px; background: var(--accent); color: #fff; border: none; border-radius: var(--radius); font-size: 16px; font-weight: 600; cursor: pointer; text-align: center; margin-top: 32px; }
+  .start-btn:hover { background: #3b7de8; }
+
+  /* ── SUBTOPIC JUMP ── */
+  .subtopic-bar { max-width: 900px; margin: 0 auto; padding: 12px 24px; display: flex; gap: 8px; flex-wrap: wrap; }
+  .st-chip { background: var(--tag-bg); color: var(--tag-text); border: none; border-radius: 20px; padding: 5px 14px; font-size: 12px; cursor: pointer; transition: background 0.15s; white-space: nowrap; }
+  .st-chip:hover, .st-chip.active { background: var(--accent); color: #fff; }
+
+  /* ── CARD AREA ── */
+  #quiz-page { display: none; flex-direction: column; min-height: calc(100vh - 53px); }
+  .card-container { flex: 1; display: flex; align-items: flex-start; justify-content: center; padding: 20px 24px; }
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); width: 100%; max-width: 900px; padding: 32px; }
+
+  .card-meta { display: flex; align-items: center; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
+  .subtopic-tag { background: var(--tag-bg); color: var(--tag-text); border-radius: 20px; padding: 4px 12px; font-size: 12px; font-weight: 500; }
+  .progress-text { color: var(--text3); font-size: 13px; margin-left: auto; }
+  .progress-bar { width: 100%; height: 3px; background: var(--border); border-radius: 2px; margin-bottom: 20px; }
+  .progress-fill { height: 100%; background: var(--accent); border-radius: 2px; transition: width 0.3s; }
+
+  .question-text { font-size: 15px; line-height: 1.75; color: var(--text); margin-bottom: 24px; }
+
+  .options { display: flex; flex-direction: column; gap: 10px; margin-bottom: 24px; }
+  .option { display: flex; gap: 12px; padding: 14px 16px; border-radius: 10px; border: 1px solid var(--border); font-size: 14px; line-height: 1.6; }
+  .option.correct { border-color: var(--green); background: rgba(34,197,94,0.08); }
+  .option-key { font-weight: 700; min-width: 22px; color: var(--text3); }
+  .option.correct .option-key { color: var(--green); }
+  .option-text { color: var(--text2); }
+  .option.correct .option-text { color: var(--text); }
+  .check { margin-left: auto; color: var(--green); font-size: 16px; }
+
+  .explanation { background: var(--surface2); border-left: 3px solid var(--accent); border-radius: 0 8px 8px 0; padding: 14px 16px; font-size: 14px; color: var(--text2); line-height: 1.7; }
+  .explanation strong { color: var(--accent); }
+
+  /* ── NAV BUTTONS ── */
+  .nav-buttons { display: flex; align-items: center; justify-content: space-between; padding: 16px 24px; border-top: 1px solid var(--border); max-width: 900px; margin: 0 auto; width: 100%; }
+  .nav-btn { background: var(--surface2); color: var(--text); border: 1px solid var(--border); border-radius: 10px; padding: 10px 24px; font-size: 14px; cursor: pointer; transition: background 0.15s; }
+  .nav-btn:hover:not(:disabled) { background: var(--border); }
+  .nav-btn:disabled { opacity: 0.3; cursor: default; }
+  .nav-btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .nav-btn.primary:hover { background: #3b7de8; }
+  .nav-center { color: var(--text3); font-size: 13px; text-align: center; }
+
+  /* ── hidden ── */
+  .hidden { display: none !important; }
+</style>
+</head>
+<body>
+
+<nav>
+  <a href="index.html">首页</a>
+  <span class="sep">›</span>
+  <span class="module-title">Load Balancing</span>
+  <div class="right">
+    <span id="nav-mode-label" style="color:var(--text3);font-size:13px"></span>
+    <button class="btn-overview" id="toggle-mode-btn">查看知识点概要</button>
+  </div>
+</nav>
+
+<!-- OVERVIEW PAGE -->
+<div id="overview-page">
+  <div class="ov-header">
+    <h1>Load Balancing</h1>
+    <div class="meta">18 道题 · 1 个子知识点</div>
+  </div>
+  <div class="ov-section"><h2>核心知识点</h2><ul><li>ALB（Layer 7）：HTTP/HTTPS/WebSocket，路径/Host/Header路由，适合微服务</li><li>NLB（Layer 4）：TCP/UDP/TLS，超低延迟，支持静态Elastic IP</li><li>GLB（Layer 3）：透明插入第三方安全设备（防火墙/IDS），GENEVE协议</li><li>Cross-Zone：ALB默认开启且免费；NLB默认关闭，开启后收费</li><li>Sticky Session：ALB基于Cookie，NLB基于源IP</li><li>ALB没有静态IP（用DNS名）；NLB支持Elastic IP</li></ul></div><div class="ov-section"><h2>解题关键词模式</h2><ul><li>HTTP路由/微服务/容器 → ALB</li><li>高性能TCP/UDP/游戏/IoT → NLB</li><li>第三方防火墙/安全设备 → GLB</li><li>需要固定IP地址 → NLB（ALB没有固定IP）</li><li>WebSocket → ALB</li></ul></div><div class="ov-section"><h2>⚠️ 常见陷阱</h2><ul><li class="trap-item">ALB没有静态IP；NLB有Elastic IP</li><li class="trap-item">GLB不用于普通应用负载均衡，是用来透明插入安全设备的</li><li class="trap-item">Cross-Zone：ALB默认启用且免费；NLB/GLB默认禁用且启用后收费</li></ul></div>
+  <button class="start-btn" onclick="startQuiz()">开始刷题 →</button>
+</div>
+
+<!-- QUIZ PAGE -->
+<div id="quiz-page">
+  <div class="subtopic-bar" id="subtopic-bar"></div>
+  <div class="card-container">
+    <div class="card" id="card">
+      <div class="card-meta">
+        <span class="subtopic-tag" id="card-subtopic"></span>
+        <span class="progress-text" id="card-progress"></span>
+      </div>
+      <div class="progress-bar"><div class="progress-fill" id="progress-fill"></div></div>
+      <div class="question-text" id="card-question"></div>
+      <div class="options" id="card-options"></div>
+      <div class="explanation" id="card-explanation"></div>
+    </div>
+  </div>
+  <div class="nav-buttons">
+    <button class="nav-btn" id="btn-prev" onclick="navigate(-1)">← 上一题</button>
+    <div class="nav-center" id="nav-center"></div>
+    <button class="nav-btn primary" id="btn-next" onclick="navigate(1)">下一题 →</button>
+  </div>
+</div>
+
+<script>
+const DATA = [{"id": 60, "stem": "A company has a website hosted on AWS. The website is behind an Application Load Balancer (ALB) that is configured to handle HTTP and HTTPS separately. The company wants to forward all requests to the website so that the requests will use HTTPS. What should a solutions architect do to meet this requirement?", "options": [{"key": "A", "text": "Update the ALB's network ACL to accept only HTTPS traffic."}, {"key": "B", "text": "Create a rule that replaces the HTTP in the URL with HTTPS."}, {"key": "C", "text": "Create a listener rule on the ALB to redirect HTTP traffic to HTTPS."}, {"key": "D", "text": "Replace the ALB with a Network Load Balancer configured to use Server Name Indication (SNI)."}], "answer": "C", "explanation": "C. Create a listener rule on the ALB to redirect HTTP traffic to HTTPS. To meet the requirement of forwarding all requests to the website so that the requests will use HTTPS, a solutions architect can create a listener rule on the ALB that redirects HTTP traffic to HTTPS. This can be done by creatin", "subtopic": "ALB（Layer 7）", "subtopic_idx": 0}, {"id": 70, "stem": "A company's HTTP application is behind a Network Load Balancer (NLB). The NLB's target group is configured to use an Amazon EC2 Auto Scaling group with multiple EC2 instances that run the web service. The company notices that the NLB is not detecting HTTP errors for the application. These errors require a manual restart of the EC2 instances that run the web service. The company needs to improve the application's availability without writing custom scripts or code. What should a solutions architect do to meet these requirements?", "options": [{"key": "A", "text": "Enable HTTP health checks on the NLB, supplying the URL of the company's application."}, {"key": "B", "text": "Add a cron job to the EC2 instances to check the local application's logs once each minute. If HTTP errors are detected. the application will restart."}, {"key": "C", "text": "Replace the NLB with an Application Load Balancer. Enable HTTP health checks by supplying the URL of the company's application. Configure an Auto Scaling action to replace unhealthy instances."}, {"key": "D", "text": "Create an Amazon Cloud Watch alarm that monitors the UnhealthyHostCount metric for the NLB. Configure an Auto Scaling action to replace unhealthy instances when the alarm is in the ALARM state."}], "answer": "C", "explanation": "I would choose A, as NLB supports HTTP and HTTPS Health Checks, BUT you can't put any URL (as proposed), only the node IP addresses. So, the solution is C.", "subtopic": "ALB（Layer 7）", "subtopic_idx": 0}, {"id": 209, "stem": "A solutions architect is designing the architecture of a new application being deployed to the AWS Cloud. The application will run on Amazon EC2 On-Demand Instances and will automatically scale across multiple Availability Zones. The EC2 instances will scale up and down frequently throughout the day. An Application Load Balancer (ALB) will handle the load distribution. The architecture needs to support distributed session data management. The company is willing to make changes to code if needed. What should the solutions architect do to ensure that the architecture supports distributed session data management?", "options": [{"key": "A", "text": "Use Amazon ElastiCache to manage and store session data."}, {"key": "B", "text": "Use session affinity (sticky sessions) of the ALB to manage session data."}, {"key": "C", "text": "Use Session Manager from AWS Systems Manager to manage the session."}, {"key": "D", "text": "Use the GetSessionToken API operation in AWS Security Token Service (AWS STS) to manage the session."}], "answer": "A", "explanation": "The correct answer is A. Use Amazon ElastiCache to manage and store session data. In order to support distributed session data management in this scenario, it is necessary to use a distributed data store such as Amazon ElastiCache. This will allow the session data to be stored and accessed by multip", "subtopic": "ALB（Layer 7）", "subtopic_idx": 0}, {"id": 245, "stem": "A company is launching an application on AWS. The application uses an Application Load Balancer (ALB) to direct traffic to at least two Amazon EC2 instances in a single target group. The instances are in an Auto Scaling group for each environment. The company requires a development environment and a production environment. The production environment will have periods of high traffic. Which solution will configure the development environment MOST cost-effectively?", "options": [{"key": "A", "text": "Reconfigure the target group in the development environment to have only one EC2 instance as a target."}, {"key": "B", "text": "Change the ALB balancing algorithm to least outstanding requests."}, {"key": "C", "text": "Reduce the size of the EC2 instances in both environments."}, {"key": "D", "text": "Reduce the maximum number of EC2 instances in the development environment’s Auto Scaling group."}], "answer": "D", "explanation": "D. Reduce the maximum number of EC2 instances in the development environment’s Auto Scaling group This option will configure the development environment in the most cost-effective way as it reduces the number of instances running in the development environment and therefore reduces the cost of runni", "subtopic": "ALB（Layer 7）", "subtopic_idx": 0}, {"id": 265, "stem": "A solutions architect needs to design a highly available application consisting of web, application, and database tiers. HTTPS content delivery should be as close to the edge as possible, with the least delivery time. Which solution meets these requirements and is MOST secure?", "options": [{"key": "A", "text": "Configure a public Application Load Balancer (ALB) with multiple redundant Amazon EC2 instances in public subnets. Configure Amazon CloudFront to deliver HTTPS content using the public ALB as the origin."}, {"key": "B", "text": "Configure a public Application Load Balancer with multiple redundant Amazon EC2 instances in private subnets. Configure Amazon CloudFront to deliver HTTPS content using the EC2 instances as the origin."}, {"key": "C", "text": "Configure a public Application Load Balancer (ALB) with multiple redundant Amazon EC2 instances in private subnets. Configure Amazon CloudFront to deliver HTTPS content using the public ALB as the origin."}, {"key": "D", "text": "Configure a public Application Load Balancer with multiple redundant Amazon EC2 instances in public subnets. Configure Amazon CloudFront to deliver HTTPS content using the EC2 instances as the origin."}], "answer": "C", "explanation": "C. Configure a public Application Load Balancer (ALB) with multiple redundant Amazon EC2 instances in private subnets. Configure Amazon CloudFront to deliver HTTPS content using the public ALB as the origin. This solution meets the requirements for a highly available application with web, applicatio", "subtopic": "ALB（Layer 7）", "subtopic_idx": 0}, {"id": 297, "stem": "A company deploys an application on five Amazon EC2 instances. An Application Load Balancer (ALB) distributes traffic to the instances by using a target group. The average CPU usage on each of the instances is below 10% most of the time, with occasional surges to 65%. A solutions architect needs to implement a solution to automate the scalability of the application. The solution must optimize the cost of the architecture and must ensure that the application has enough CPU resources when surges occur. Which solution will meet these requirements?", "options": [{"key": "A", "text": "Create an Amazon CloudWatch alarm that enters the ALARM state when the CPUUtilization metric is less than 20%. Create an AWS Lambda function that the CloudWatch alarm invokes to terminate one of the EC2 instances in the ALB target group."}, {"key": "B", "text": "Create an EC2 Auto Scaling group. Select the existing ALB as the load balancer and the existing target group as the target group. Set a target tracking scaling policy that is based on the ASGAverageCPUUtilization metric. Set the minimum instances to 2, the desired capacity to 3, the maximum instances to 6, and the target value to 50%. Add the EC2 instances to the Auto Scaling group."}, {"key": "C", "text": "Create an EC2 Auto Scaling group. Select the existing ALB as the load balancer and the existing target group as the target group. Set the minimum instances to 2, the desired capacity to 3, and the maximum instances to 6. Add the EC2 instances to the Auto Scaling group."}, {"key": "D", "text": "Create two Amazon CloudWatch alarms. Configure the first CloudWatch alarm to enter the ALARM state when the average CPUUtilization metric is below 20%. Configure the second CloudWatch alarm to enter the ALARM state when the average CPUUtilization matric is above 50%. Configure the alarms to publish to an Amazon Simple Notification Service (Amazon SNS) topic to send an email message. After receiving the message, log in to decrease or increase the number of EC2 instances that are running."}], "answer": "B", "explanation": "答案B最符合题目场景要求，Create an EC2 Auto Scaling group. Select the existing ALB as the load balancer a。", "subtopic": "ALB（Layer 7）", "subtopic_idx": 0}, {"id": 530, "stem": "A company has an online gaming application that has TCP and UDP multiplayer gaming capabilities. The company uses Amazon Route 53 to point the application traffic to multiple Network Load Balancers (NLBs) in different AWS Regions. The company needs to improve application performance and decrease latency for the online game in preparation for user growth. Which solution will meet these requirements?", "options": [{"key": "A", "text": "Add an Amazon CloudFront distribution in front of the NLBs. Increase the Cache-Control max-age parameter."}, {"key": "B", "text": "Replace the NLBs with Application Load Balancers (ALBs). Configure Route 53 to use latency-based routing."}, {"key": "C", "text": "Add AWS Global Accelerator in front of the NLBs. Configure a Global Accelerator endpoint to use the correct listener ports."}, {"key": "D", "text": "Add an Amazon API Gateway endpoint behind the NLBs. Enable API caching. Override method caching for the different stages."}], "answer": "C", "explanation": "The key considerations are: The application uses TCP and UDP for multiplayer gaming, so Network Load Balancers (NLBs) are appropriate. AWS Global Accelerator can be added in front of the NLBs to improve performance and reduce latency by intelligently routing traffic across AWS Regions and Availabili", "subtopic": "ALB（Layer 7）", "subtopic_idx": 0}, {"id": 531, "stem": "A company needs to integrate with a third-party data feed. The data feed sends a webhook to notify an external service when new data is ready for consumption. A developer wrote an AWS Lambda function to retrieve data when the company receives a webhook callback. The developer must make the Lambda function available for the third party to call. Which solution will meet these requirements with the MOST operational efficiency?", "options": [{"key": "A", "text": "Create a function URL for the Lambda function. Provide the Lambda function URL to the third party for the webhook."}, {"key": "B", "text": "Deploy an Application Load Balancer (ALB) in front of the Lambda function. Provide the ALB URL to the third party for the webhook."}, {"key": "C", "text": "Create an Amazon Simple Notification Service (Amazon SNS) topic. Attach the topic to the Lambda function. Provide the public hostname of the SNS topic to the third party for the webhook."}, {"key": "D", "text": "Create an Amazon Simple Queue Service (Amazon SQS) queue. Attach the queue to the Lambda function. Provide the public hostname of the SQS queue to the third party for the webhook."}], "answer": "A", "explanation": "A function URL is a dedicated HTTP(S) endpoint for your Lambda function. When you create a function URL, Lambda automatically generates a unique URL endpoint for you.", "subtopic": "ALB（Layer 7）", "subtopic_idx": 0}, {"id": 545, "stem": "A company wants to direct its users to a backup static error page if the company's primary website is unavailable. The primary website's DNS records are hosted in Amazon Route 53. The domain is pointing to an Application Load Balancer (ALB). The company needs a solution that minimizes changes and infrastructure overhead. Which solution will meet these requirements?", "options": [{"key": "A", "text": "Update the Route 53 records to use a latency routing policy. Add a static error page that is hosted in an Amazon S3 bucket to the records so that the traffic is sent to the most responsive endpoints."}, {"key": "B", "text": "Set up a Route 53 active-passive failover configuration. Direct traffic to a static error page that is hosted in an Amazon S3 bucket when Route 53 health checks determine that the ALB endpoint is unhealthy."}, {"key": "C", "text": "Set up a Route 53 active-active configuration with the ALB and an Amazon EC2 instance that hosts a static error page as endpoints. Configure Route 53 to send requests to the instance only if the health checks fail for the ALB."}, {"key": "D", "text": "Update the Route 53 records to use a multivalue answer routing policy. Create a health check. Direct traffic to the website if the health check passes. Direct traffic to a static error page that is hosted in Amazon S3 if the health check does not pass."}], "answer": "B", "explanation": "Set up a Route 53 active-passive failover configuration. Direct traffic to a static error page that is hosted in an Amazon S3 bucket when Route 53 health checks determine that the ALB endpoint is unhealthy.", "subtopic": "ALB（Layer 7）", "subtopic_idx": 0}, {"id": 600, "stem": "A company is planning to migrate a TCP-based application into the company's VPC. The application is publicly accessible on a nonstandard TCP port through a hardware appliance in the company's data center. This public endpoint can process up to 3 million requests per second with low latency. The company requires the same level of performance for the new public endpoint in AWS. What should a solutions architect recommend to meet this requirement?", "options": [{"key": "A", "text": "Deploy a Network Load Balancer (NLB). Configure the NLB to be publicly accessible over the TCP port that the application requires."}, {"key": "B", "text": "Deploy an Application Load Balancer (ALB). Configure the ALB to be publicly accessible over the TCP port that the application requires."}, {"key": "C", "text": "Deploy an Amazon CloudFront distribution that listens on the TCP port that the application requires. Use an Application Load Balancer as the origin."}, {"key": "D", "text": "Deploy an Amazon API Gateway API that is configured with the TCP port that the application requires. Configure AWS Lambda functions with provisioned concurrency to process the requests."}], "answer": "A", "explanation": "Since the company requires the same level of performance for the new public endpoint in AWS. A Network Load Balancer functions at the fourth layer of the Open Systems Interconnection (OSI) model. It can handle millions of requests per second. After the load balancer receives a connection request, it", "subtopic": "ALB（Layer 7）", "subtopic_idx": 0}, {"id": 639, "stem": "A company is building a new furniture inventory application. The company has deployed the application on a fleet ofAmazon EC2 instances across multiple Availability Zones. The EC2 instances run behind an Application Load Balancer (ALB) in their VPC. A solutions architect has observed that incoming traffic seems to favor one EC2 instance, resulting in latency for some requests. What should the solutions architect do to resolve this issue?", "options": [{"key": "A", "text": "Disable session affinity (sticky sessions) on the ALB"}, {"key": "B", "text": "Replace the ALB with a Network Load Balancer"}, {"key": "C", "text": "Increase the number of EC2 instances in each Availability Zone"}, {"key": "D", "text": "Adjust the frequency of the health checks on the ALB's target group"}], "answer": "A", "explanation": "答案A最符合题目场景要求，Disable session affinity (sticky sessions) on the ALB。", "subtopic": "ALB（Layer 7）", "subtopic_idx": 0}, {"id": 707, "stem": "A company is using an Application Load Balancer (ALB) to present its application to the internet. The company finds abnormal traffic access patterns across the application. A solutions architect needs to improve visibility into the infrastructure to help the company understand these abnormalities better. What is the MOST operationally efficient solution that meets these requirements?", "options": [{"key": "A", "text": "Create a table in Amazon Athena for AWS CloudTrail logs. Create a query for the relevant information."}, {"key": "B", "text": "Enable ALB access logging to Amazon S3. Create a table in Amazon Athena, and query the logs."}, {"key": "C", "text": "Enable ALB access logging to Amazon S3. Open each file in a text editor, and search each line for the relevant information."}, {"key": "D", "text": "Use Amazon EMR on a dedicated Amazon EC2 instance to directly query the ALB to acquire traffic access log information."}], "answer": "B", "explanation": "Athena是Serverless SQL引擎，直接查询S3，按扫描量计费，用Parquet/分区大幅降低成本。", "subtopic": "ALB（Layer 7）", "subtopic_idx": 0}, {"id": 716, "stem": "A company runs a real-time data ingestion solution on AWS. The solution consists of the most recent version of Amazon Managed Streaming for Apache Kafka (Amazon MSK). The solution is deployed in a VPC in private subnets across three Availability Zones. A solutions architect needs to redesign the data ingestion solution to be publicly available over the internet. The data in transit must also be encrypted. Which solution will meet these requirements with the MOST operational efficiency?", "options": [{"key": "A", "text": "Configure public subnets in the existing VPC. Deploy an MSK cluster in the public subnets. Update the MSK cluster security settings to enable mutual TLS authentication."}, {"key": "B", "text": "Create a new VPC that has public subnets. Deploy an MSK cluster in the public subnets. Update the MSK cluster security settings to enable mutual TLS authentication."}, {"key": "C", "text": "Deploy an Application Load Balancer (ALB) that uses private subnets. Configure an ALB security group inbound rule to allow inbound traffic from the VPC CIDR block for HTTPS protocol."}, {"key": "D", "text": "Deploy a Network Load Balancer (NLB) that uses private subnets. Configure an NLB listener for HTTPS communication over the internet."}], "answer": "A", "explanation": "Since we are talking about real-time data (UDP packets) ALB is not a viable solution. You don't need to listen HTTPS, so D is eliminated. If you create a new VPC, you must create link between the old one and this is not mentioned in B. So It is A for me.", "subtopic": "ALB（Layer 7）", "subtopic_idx": 0}, {"id": 813, "stem": "A solutions architect runs a web application on multiple Amazon EC2 instances that are in individual target groups behind an Application Load Balancer (ALB). Users can reach the application through a public website. The solutions architect wants to allow engineers to use a development version of the website to access one specific development EC2 instance to test new features for the application. The solutions architect wants to use an Amazon Route 53 hosted zone to give the engineers access to the development instance. The solution must automatically route to the development instance even if the development instance is replaced. Which solution will meet these requirements?", "options": [{"key": "A", "text": "Create an A Record for the development website that has the value set to the ALB. Create a listener rule on the ALB that forwards requests for the development website to the target group that contains the development instance."}, {"key": "B", "text": "Recreate the development instance with a public IP address. Create an A Record for the development website that has the value set to the public IP address of the development instance."}, {"key": "C", "text": "Create an A Record for the development website that has the value set to the ALB. Create a listener rule on the ALB to redirect requests for the development website to the public IP address of the development instance."}, {"key": "D", "text": "Place all the instances in the same target group. Create an A Record for the development website. Set the value to the ALB. Create a listener rule on the ALB that forwards requests for the development website to the target group."}], "answer": "A", "explanation": "Both A and C look correct but with the C you pass through the ALB to be redirected to a public IP (so go outside) to come back again through this public IP which is not ideal. The answer A is much cleaner and simplier with a dedicated target group and a listener rule pointing it.", "subtopic": "ALB（Layer 7）", "subtopic_idx": 0}, {"id": 815, "stem": "An online gaming company hosts its platform on Amazon EC2 instances behind Network Load Balancers (NLBs) across multiple AWS Regions. The NLBs can route requests to targets over the internet. The company wants to improve the customer playing experience by reducing end-to-end load time for its global customer base. Which solution will meet these requirements?", "options": [{"key": "A", "text": "Create Application Load Balancers (ALBs) in each Region to replace the existing NLBs. Register the existing EC2 instances as targets for the ALBs in each Region."}, {"key": "B", "text": "Configure Amazon Route 53 to route equally weighted traffic to the NLBs in each Region."}, {"key": "C", "text": "Create additional NLBs and EC2 instances in other Regions where the company has large customer bases."}, {"key": "D", "text": "Create a standard accelerator in AWS Global Accelerator. Configure the existing NLBs as target endpoints."}], "answer": "D", "explanation": "In such situation if you had an ALB you would use Cloudfront Since you have a NLB you use AWS Global Accelerator So D. asdfcdsxdfc", "subtopic": "ALB（Layer 7）", "subtopic_idx": 0}, {"id": 945, "stem": "An ecommerce company runs several internal applications in multiple AWS accounts. The company uses AWS Organizations to manage its AWS accounts. A security appliance in the company's networking account must inspect interactions between applications across AWS accounts. Which solution will meet these requirements?", "options": [{"key": "A", "text": "Deploy a Network Load Balancer (NLB) in the networking account to send traffic to the security appliance. Configure the application accounts to send traffic to the NLB by using an interface VPC endpoint in the application accounts."}, {"key": "B", "text": "Deploy an Application Load Balancer (ALB) in the application accounts to send traffic directly to the security appliance."}, {"key": "C", "text": "Deploy a Gateway Load Balancer (GWLB) in the networking account to send traffic to the security appliance. Configure the application accounts to send traffic to the GWLB by using an interface GWLB endpoint in the application accounts."}, {"key": "D", "text": "Deploy an interface VPC endpoint in the application accounts to send traffic directly to the security appliance."}], "answer": "C", "explanation": "security appliance, inspect interaction => GWLB", "subtopic": "ALB（Layer 7）", "subtopic_idx": 0}, {"id": 973, "stem": "A company is designing a web application with an internet-facing Application Load Balancer (ALB). The company needs the ALB to receive HTTPS web traffic from the public internet. The ALB must send only HTTPS traffic to the web application servers hosted on the Amazon EC2 instances on port 443. The ALB must perform a health check of the web application servers over HTTPS on port 8443. Which combination of configurations of the security group that is associated with the ALB will meet these requirements? (Choose three.)", "options": [{"key": "A", "text": "Allow HTTPS inbound traffic from 0.0.0.0/0 for port 443."}, {"key": "B", "text": "Allow all outbound traffic to 0.0.0.0/0 for port 443."}, {"key": "C", "text": "Allow HTTPS outbound traffic to the web application instances for port 443."}, {"key": "D", "text": "Allow HTTPS inbound traffic from the web application instances for port 443. E. Allow HTTPS outbound traffic to the web application instances for the health check on port 8443.F. Allow HTTPS inbound traffic from the web application instances for the health check on port 8443."}], "answer": "ACE", "explanation": "I agree, one of the worst written questions, which I hope not to see on the real test. Terrible question. Terribly written answers.", "subtopic": "ALB（Layer 7）", "subtopic_idx": 0}, {"id": 1006, "stem": "A company uses AWS Systems Manager for routine management and patching of Amazon EC2 instances. The EC2 instances are in an IP address type target group behind an Application Load Balancer (ALB). New security protocols require the company to remove EC2 instances from service during a patch. When the company attempts to follow the security protocol during the next patch, the company receives errors during the patching window. Which combination of solutions will resolve the errors? (Choose two.)", "options": [{"key": "A", "text": "Change the target type of the target group from IP address type to instance type."}, {"key": "B", "text": "Continue to use the existing Systems Manager document without changes because it is already optimized to handle instances that are in an IP address type target group behind an ALB."}, {"key": "C", "text": "Implement the AWSEC2-PatchLoadBalanacerInstance Systems Manager Automation document to manage the patching process."}, {"key": "D", "text": "Use Systems Manager Maintenance Windows to automatically remove the instances from service to patch the instances.E. Configure Systems Manager State Manager to remove the instances from service and manage the patching schedule. Use ALB health checks to re-route traffic."}], "answer": "CD", "explanation": "YOU SHOULD KNOW: The errors occur because the company is trying to patch instances that are still actively serving traffic. A - Unnecessary when existing tools can handle the issue. B - The existing document is not optimized for instances in an IP address type target group, so errors would persist. ", "subtopic": "ALB（Layer 7）", "subtopic_idx": 0}];
+const SUBTOPICS = [{"name": "ALB（Layer 7）", "count": 18}];
+
+let currentIndex = 0;
+let inQuiz = false;
+
+function startQuiz() {
+  inQuiz = true;
+  document.getElementById('overview-page').style.display = 'none';
+  document.getElementById('quiz-page').style.display = 'flex';
+  document.getElementById('toggle-mode-btn').textContent = '查看知识点概要';
+  document.getElementById('nav-mode-label').textContent = '';
+  buildSubtopicBar();
+  renderCard(0);
+}
+
+function showOverview() {
+  inQuiz = false;
+  document.getElementById('overview-page').style.display = 'block';
+  document.getElementById('quiz-page').style.display = 'none';
+  document.getElementById('toggle-mode-btn').textContent = '开始刷题';
+}
+
+document.getElementById('toggle-mode-btn').addEventListener('click', () => {
+  if (inQuiz) showOverview(); else startQuiz();
+});
+
+function buildSubtopicBar() {
+  const bar = document.getElementById('subtopic-bar');
+  bar.innerHTML = '';
+  SUBTOPICS.forEach((st, idx) => {
+    const btn = document.createElement('button');
+    btn.className = 'st-chip';
+    btn.textContent = st.name + ' (' + st.count + ')';
+    btn.onclick = () => jumpToSubtopic(idx);
+    bar.appendChild(btn);
+  });
+}
+
+function jumpToSubtopic(stIdx) {
+  const firstQ = DATA.findIndex(q => q.subtopic_idx === stIdx);
+  if (firstQ >= 0) renderCard(firstQ);
+}
+
+function renderCard(idx) {
+  if (idx < 0 || idx >= DATA.length) return;
+  currentIndex = idx;
+  const q = DATA[idx];
+
+  document.getElementById('card-subtopic').textContent = q.subtopic;
+  document.getElementById('card-progress').textContent =
+    'Q' + q.id + '  ·  ' + (idx + 1) + ' / ' + DATA.length;
+  document.getElementById('progress-fill').style.width = ((idx + 1) / DATA.length * 100) + '%';
+  document.getElementById('card-question').textContent = q.stem;
+
+  const opts = document.getElementById('card-options');
+  opts.innerHTML = '';
+  q.options.forEach(o => {
+    const div = document.createElement('div');
+    div.className = 'option' + (q.answer.includes(o.key) ? ' correct' : '');
+    div.innerHTML = '<span class="option-key">' + o.key + '.</span>' +
+      '<span class="option-text">' + o.text + '</span>' +
+      (q.answer.includes(o.key) ? '<span class="check">✓</span>' : '');
+    opts.appendChild(div);
+  });
+
+  document.getElementById('card-explanation').innerHTML =
+    '<strong>💡 </strong>' + q.explanation;
+
+  document.getElementById('nav-center').textContent =
+    q.subtopic + ' · ' + getSubtopicProgress(idx);
+
+  document.getElementById('btn-prev').disabled = idx === 0;
+  document.getElementById('btn-next').disabled = idx === DATA.length - 1;
+  document.getElementById('btn-next').textContent = idx === DATA.length - 1 ? '完成 ✓' : '下一题 →';
+
+  // Update subtopic bar active state
+  document.querySelectorAll('.st-chip').forEach((chip, i) => {
+    chip.classList.toggle('active', i === q.subtopic_idx);
+  });
+  window.scrollTo(0, 0);
+}
+
+function getSubtopicProgress(idx) {
+  const stIdx = DATA[idx].subtopic_idx;
+  const stItems = DATA.filter(q => q.subtopic_idx === stIdx);
+  const posInSt = stItems.findIndex(q => q.id === DATA[idx].id) + 1;
+  return posInSt + '/' + stItems.length;
+}
+
+function navigate(dir) {
+  renderCard(currentIndex + dir);
+}
+
+document.addEventListener('keydown', e => {
+  if (!inQuiz) return;
+  if (e.key === 'ArrowLeft') navigate(-1);
+  if (e.key === 'ArrowRight') navigate(1);
+});
+</script>
+</body>
+</html>

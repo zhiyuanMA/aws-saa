@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AWS SAA-C03 备考</title>
+<style>
+  :root {
+    --bg: #0f1117; --surface: #1a1d27; --surface2: #22263a;
+    --border: #2e3350; --accent: #4f8ef7;
+    --text: #e2e8f0; --text2: #94a3b8; --text3: #64748b;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; min-height: 100vh; }
+  header { padding: 48px 24px 32px; text-align: center; }
+  header h1 { font-size: 28px; font-weight: 700; margin-bottom: 10px; }
+  header p { color: var(--text2); font-size: 15px; }
+  .domains { display: flex; justify-content: center; gap: 12px; flex-wrap: wrap; margin: 0 auto 40px; max-width: 860px; padding: 0 24px; }
+  .domain-badge { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 10px 18px; font-size: 13px; color: var(--text2); text-align: center; }
+  .domain-badge strong { display: block; color: var(--accent); font-size: 18px; margin-bottom: 2px; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; max-width: 1000px; margin: 0 auto; padding: 0 24px 60px; }
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 24px; text-decoration: none; color: inherit; display: flex; flex-direction: column; gap: 12px; transition: border-color 0.2s, transform 0.15s; }
+  .card:hover { border-color: var(--accent); transform: translateY(-2px); }
+  .card-top { display: flex; align-items: center; gap: 12px; }
+  .card-num { background: var(--surface2); color: var(--text3); border-radius: 8px; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 600; flex-shrink: 0; }
+  .card-title { font-size: 16px; font-weight: 600; }
+  .card-meta { display: flex; gap: 8px; flex-wrap: wrap; }
+  .badge { background: var(--surface2); color: var(--text3); border-radius: 6px; padding: 3px 10px; font-size: 12px; }
+  .badge.q { color: var(--text2); }
+  .badge.st { color: #93c5fd; background: #1e3a5f; }
+  .card-hint { color: var(--text3); font-size: 12px; line-height: 1.5; }
+</style>
+</head>
+<body>
+<header>
+  <h1>AWS SAA-C03 备考笔记</h1>
+  <p>1019 道真题 · 按知识点分组 · 每题含答案原理</p>
+</header>
+<div class="domains">
+  <div class="domain-badge"><strong>30%</strong>Design Secure Architectures</div>
+  <div class="domain-badge"><strong>26%</strong>Design Resilient Architectures</div>
+  <div class="domain-badge"><strong>24%</strong>Design High-Performing Architectures</div>
+  <div class="domain-badge"><strong>20%</strong>Design Cost-Optimized Architectures</div>
+</div>
+<div class="grid">
+  <a class="card" href="1_IAM_and_Security.html"><div class="card-top"><div class="card-num">1</div><div class="card-title">IAM &amp; Security</div></div><div class="card-meta"><span class="badge q">161 题</span><span class="badge st">7 子知识点</span></div><div class="card-hint">IAM角色/策略 · Organizations/SCP · Cognito · KMS · Secrets Manager · GuardDuty · WAF/Shield</div></a>
+  <a class="card" href="2_VPC_and_Networking.html"><div class="card-top"><div class="card-num">2</div><div class="card-title">VPC &amp; Networking</div></div><div class="card-meta"><span class="badge q">118 题</span><span class="badge st">6 子知识点</span></div><div class="card-hint">安全组/NACL · NAT Gateway · VPC Endpoints · Peering/TGW · Direct Connect/VPN · 子网设计</div></a>
+  <a class="card" href="3_EC2_and_Auto_Scaling.html"><div class="card-top"><div class="card-num">3</div><div class="card-title">EC2 &amp; Auto Scaling</div></div><div class="card-meta"><span class="badge q">194 题</span><span class="badge st">7 子知识点</span></div><div class="card-hint">Spot/Reserved/Savings Plans · Auto Scaling策略 · EBS卷类型 · 置放群组 · SSM</div></a>
+  <a class="card" href="4_Databases.html"><div class="card-top"><div class="card-num">4</div><div class="card-title">Databases</div></div><div class="card-meta"><span class="badge q">134 题</span><span class="badge st">7 子知识点</span></div><div class="card-hint">RDS Multi-AZ vs Read Replica · Aurora · DynamoDB/DAX · ElastiCache · RDS Proxy · Redshift</div></a>
+  <a class="card" href="5_S3_and_Storage.html"><div class="card-top"><div class="card-num">5</div><div class="card-title">S3 &amp; Storage</div></div><div class="card-meta"><span class="badge q">113 题</span><span class="badge st">5 子知识点</span></div><div class="card-hint">存储类型/生命周期 · 安全/访问控制 · 复制/传输加速 · Object Lock · Presigned URL</div></a>
+  <a class="card" href="6_Serverless.html"><div class="card-top"><div class="card-num">6</div><div class="card-title">Serverless</div></div><div class="card-meta"><span class="badge q">90 题</span><span class="badge st">4 子知识点</span></div><div class="card-hint">Lambda · ECS/EKS/Fargate · API Gateway · Step Functions · EventBridge · App Runner</div></a>
+  <a class="card" href="7_Load_Balancing.html"><div class="card-top"><div class="card-num">7</div><div class="card-title">Load Balancing</div></div><div class="card-meta"><span class="badge q">18 题</span><span class="badge st">3 子知识点</span></div><div class="card-hint">ALB (Layer 7) · NLB (Layer 4) · GLB · Sticky Session · Cross-Zone</div></a>
+  <a class="card" href="8_Messaging_and_Integration.html"><div class="card-top"><div class="card-num">8</div><div class="card-title">Messaging &amp; Integration</div></div><div class="card-meta"><span class="badge q">42 题</span><span class="badge st">4 子知识点</span></div><div class="card-hint">SQS/DLQ/FIFO · SNS Fan-out · Kinesis Streams/Firehose · Amazon MQ</div></a>
+  <a class="card" href="9_Storage_and_File_Systems.html"><div class="card-top"><div class="card-num">9</div><div class="card-title">Storage &amp; File Systems</div></div><div class="card-meta"><span class="badge q">34 题</span><span class="badge st">4 子知识点</span></div><div class="card-hint">EFS · FSx (Windows/Lustre) · Storage Gateway · DataSync/Snowball/Transfer Family</div></a>
+  <a class="card" href="10_Content_Delivery_and_DNS.html"><div class="card-top"><div class="card-num">10</div><div class="card-title">Content Delivery &amp; DNS</div></div><div class="card-meta"><span class="badge q">32 题</span><span class="badge st">3 子知识点</span></div><div class="card-hint">CloudFront/OAC · Route 53路由策略 · Global Accelerator</div></a>
+  <a class="card" href="11_Monitoring_and_Management.html"><div class="card-top"><div class="card-num">11</div><div class="card-title">Monitoring &amp; Management</div></div><div class="card-meta"><span class="badge q">44 题</span><span class="badge st">4 子知识点</span></div><div class="card-hint">CloudWatch · CloudTrail/Config · SSM · Organizations/Control Tower</div></a>
+  <a class="card" href="12_Analytics.html"><div class="card-top"><div class="card-num">12</div><div class="card-title">Analytics</div></div><div class="card-meta"><span class="badge q">26 题</span><span class="badge st">5 子知识点</span></div><div class="card-hint">Athena/Glue · EMR · Redshift/QuickSight · OpenSearch · Lake Formation</div></a>
+  <a class="card" href="13_Migration_and_DR.html"><div class="card-top"><div class="card-num">13</div><div class="card-title">Migration &amp; DR</div></div><div class="card-meta"><span class="badge q">12 题</span><span class="badge st">3 子知识点</span></div><div class="card-hint">DR四种策略(RTO/RPO) · Application Migration Service · DMS/SCT · AWS Backup</div></a>
+</div>
+</body>
+</html>
